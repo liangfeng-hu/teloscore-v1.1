@@ -8,7 +8,7 @@
 ![Last Update](https://img.shields.io/github/last-commit/liangfeng-hu/teloscore-v1.1)
 [![Stars](https://img.shields.io/github/stars/liangfeng-hu/teloscore-v1.1?style=social)](https://github.com/liangfeng-hu/teloscore-v1.1/stargazers)
 
-**TelosCore v1.1** is a lightweight, backend-agnostic *stability control plane* for persistent memory agents.  
+TelosCore v1.1 is a lightweight, backend-agnostic **stability control plane** for persistent memory agents.  
 It models internal cognitive tension as a scalar potential **U** (uncertainty / conflict / entropy / telos drift) and selects actions via global minimization of **ΔU** over a bounded control set:
 
 **Clarify / Patch / Compress / Respond**
@@ -66,7 +66,7 @@ Citation
   title={TelosCore v1.1: A Deterministic Cognitive Energy Regulation Layer for Long-Term Memory Agents},
   author={Liangfeng Hu},
   year={2026},
-  howpublished={\url{https://github.com/liangfeng-hu/teloscore-v1.1}},
+  howpublished={https://github.com/liangfeng-hu/teloscore-v1.1},
 }
 <details> <summary><b>中文简介（点击展开）</b></summary>
 
@@ -84,3 +84,4 @@ v1.1 增加了“退火”（annealing）：当张力持续过高时，仅对近
 
 Made for the 2026 competition.
 If this repo helps, starring it is appreciated.
+::contentReference[oaicite:0]{index=0}
