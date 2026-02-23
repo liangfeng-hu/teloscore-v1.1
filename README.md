@@ -1,129 +1,86 @@
-\# TelosCore — Cognitive Energy Engine for Memory Agents (2026 Competition Build)
+# TelosCore v1.1
+**A deterministic Cognitive Energy Regulation Layer for stable long-term memory agents**
 
+[![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-blue)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-green)](https://fastapi.tiangolo.com/)
+[![Streamlit](https://img.shields.io/badge/Streamlit-1.32-red)](https://streamlit.io/)
+![Last Update](https://img.shields.io/github/last-commit/liangfeng-hu/teloscore-v1.1)
+[![Stars](https://img.shields.io/github/stars/liangfeng-hu/teloscore-v1.1?style=social)](https://github.com/liangfeng-hu/teloscore-v1.1/stargazers)
 
+**TelosCore v1.1** is a lightweight, backend-agnostic *stability control plane* for persistent memory agents.  
+It models internal cognitive tension as a scalar potential **U** (uncertainty / conflict / entropy / telos drift) and selects actions via global minimization of **ΔU** over a bounded control set:
 
-\## 💡 一句话
+**Clarify / Patch / Compress / Respond**
 
-TelosCore 不是在“更精准检索记忆”，而是在做 \*\*能量驱动的认知调节\*\*：当系统的内部张力升高（不确定/冲突/噪声/目标偏离），它会自动选择最能降低张力的动作（澄清/因果解释/压缩/继续推进）。
+Version **v1.1** adds energy-triggered **annealing** (recent-window plasticity) for controlled forgetting under sustained high tension.
 
+---
 
+## What this repo contains
+- `telos_core.py` — core energy computation + ΔU action selection + annealing
+- `app.py` — FastAPI server (port 8000)
+- `dashboard_pro.py` — Streamlit dashboard (visualizes U and components)
+- `demo_script.py` — quick demo runner
+- `auto_make_figs.py` — generates the official triptych evidence figure
+- `assets/00_triptych.png` — evidence chain figure (Baseline → Spike → Anneal)
 
-\## ❓ 为什么需要它
+---
 
-传统记忆系统越用越像垃圾场：
-
-\*\*存得越多 → 噪声越大 → 冲突越多 → 越容易不稳。\*\*
-
-
-
-TelosCore 的做法是：把“记忆系统的健康”变成一个单一能量 U，并让所有行为以降低 U 为目标。
-
-
-
-\## 🧮 核心公式
-
-
-
-$$U = w\_1 U\_{uncertainty} + w\_2 U\_{conflict} + w\_3 U\_{entropy} + w\_4 U\_{telos}$$
-
-
-
-\* \*\*Uncertainty\*\*：不确定性升高 → 触发澄清
-
-\* \*\*Conflict\*\*：矛盾升高 → 触发因果解释式补丁问句
-
-\* \*\*Entropy\*\*：噪声升高 → 触发压缩整理
-
-\* \*\*Telos\*\*：目标偏离升高 → 触发继续推进建议
-
-
-
-\## 🏗️ 架构
-
-\* \*\*EverMemOS\*\*：存储/检索“肌肉”（REST API）
-
-\* \*\*TelosCore\*\*：能量计算 + ΔU 动作选择（纯工程实现）
-
-\* \*\*Pro Dashboard\*\*：实时曲线、分量分解、3D 地形演示（评委可一眼理解）
-
-
-
-\## 🚀 一键运行
-
-
-
-1\. 启动 EverMemOS（默认 1995 端口）
-
+## Quick start (reproducible)
 ```bash
+git clone https://github.com/liangfeng-hu/teloscore-v1.1.git
+cd teloscore-v1.1
+pip install -r requirements.txt
 
-uv run python src/run.py
+# generate evidence figure
+python auto_make_figs.py
 
+# run API
+uvicorn app:app --reload --port 8000
 
+# run dashboard
+streamlit run dashboard_pro.py
 
-2.启动 TelosCore API（8000 端口）
+Reproducible evidence (video-free)
 
-uvicorn app:app --port 8000
+Run:
+python auto_make_figs.py
 
+It produces the official evidence chain:
 
+Quantitative snapshot (auto-generated)
 
-3.启动 Pro Dashboard 可视化面板
+Stage	Total U	Unc.	Confl.	Ent.	Plasticity
+Baseline	0.495	0.000	0.000	0.005	0.925
+Spike	0.625	0.540	0.000	0.015	0.882
+Anneal	0.000	0.000	0.000	0.000	0.963
+Paper
 
-streamlit run dashboard\_pro.py
+PDF: TelosCore v1.1 Paper
 
+If the link is broken: make sure the PDF is uploaded to docs/TelosCore_v1.1.pdf.
 
+Citation
+@misc{teloscore2026,
+  title={TelosCore v1.1: A Deterministic Cognitive Energy Regulation Layer for Long-Term Memory Agents},
+  author={Liangfeng Hu},
+  year={2026},
+  howpublished={\url{https://github.com/liangfeng-hu/teloscore-v1.1}},
+}
+<details> <summary><b>中文简介（点击展开）</b></summary>
 
-4.运行录屏自动脚本（可选）
+TelosCore v1.1 是一个轻量级、可插拔的“稳定性控制层”。
+它将长期对话中的认知张力（不确定性/冲突/噪声熵/目标偏离）统一为标量势能 U，并在每一步通过最小化 ΔU 来确定性选择动作：
 
-python demo\_script.py
+Clarify / Patch / Compress / Respond
 
+v1.1 增加了“退火”（annealing）：当张力持续过高时，仅对近期滑动窗口记忆做受控衰减，避免不稳定痕迹无限积累。
 
+论文 PDF：docs/TelosCore_v1.1.pdf
+图证链：assets/00_triptych.png
 
-🎬 Demo 叙事（8 分钟）
+</details>
 
-1.正常输入 → U 低
-
-
-
-2.加入“但是/却/相反” → Conflict 上升 → U 尖峰 → 系统触发 patch
-
-
-
-3.加入“也许/不确定” → Uncertainty 上升 → 系统触发 clarify
-
-
-
-4.连续废话 → Entropy 上升 → 系统触发 compress
-
-
-
-Dashboard 显示：U(t) 从尖峰回落，分量清晰可解释，3D 地形的“山峰”随冲突升高而隆起。
-
-
-
-✨ 亮点
-
-新范式：不是 RAG 调参，而是认知热力学式自调节
-
-工程简洁：核心逻辑极短，可读可调
-
-可解释可视化：评委无需看代码就能理解系统行为
-
-兼容生态：可叠加在任何记忆后端之上（这里复用 EverMemOS）
-
-
-### v1.1 可选增强：Energy-Driven Memory Plasticity（默认关闭）
-TelosCore v1.1 允许开启一个可选增强：当系统处于高认知张力（U 较高）时，
-本地 fallback 记忆会发生轻量“权重退火”：
-- 高冲突/高噪声时：近期记忆权重衰减（降低未来被检索到的概率）
-- 目标对齐明显时：近期记忆权重轻度强化
-结果：系统越用，越倾向保留低张力、目标相关的记忆片段。
-
-默认 `PLASTICITY=0`（最稳、最易复现）。如需体验自进化，将 `telos_core.py` 顶部 `PLASTICITY=1` 即可。
-Dashboard 会显示 `Memory Plasticity` 指标作为可视证据。
-
-
-
-
-
-
-
+Made for the 2026 competition.
+If this repo helps, starring it is appreciated.
