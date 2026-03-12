@@ -1,9 +1,10 @@
-# TelosCore Full-Memory Build
+```markdown
+# TelosCore Full-Memory Architecture
 **全量记忆认知能量稳定性调节层总方案**
 
 ## 1. 总定位
 
-TelosCore Full-Memory Build 不是单纯的记忆数据库，也不是单纯的动作选择器，而是一个三层咬合的系统：
+TelosCore Full-Memory Architecture 不是单纯的记忆数据库，也不是单纯的动作选择器，而是一个三层咬合的系统：
 
 1. **EverMemOS 记忆体底座**
    - 负责持久化、跨会话、跨时间窗的记忆保存与检索
