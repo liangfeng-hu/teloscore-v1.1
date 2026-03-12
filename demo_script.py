@@ -1,20 +1,14 @@
-# demo_script.py
 import requests
 import time
 
 API = "http://localhost:8000/interact"
 
-sequence = [
-    "今天阳光不错。",
-    "我想要开始变健康（目标）。",
-    "不过我今晚要吃披萨（但是）。",
-    "也许我只是压力大，不确定自己能不能坚持（也许/不确定）。",
-    "好的 好的 好的 哈哈 哈哈 明白了（噪声噪声噪声）。",
-    "我计划下周开始规律运动（目标）。"
-]
+print("\n=== Session 1: write conflict into EverMemOS ===")
+r1 = requests.post(API, json={"message": "你这方案根本不行，完全是错的！"})
+print(r1.json())
 
-for s in sequence:
-    print("\nUSER:", s)
-    r = requests.post(API, json={"message": s})
-    print(r.json())
-    time.sleep(0.6)
+time.sleep(2)
+
+print("\n=== Session 2: restore memory and bias decision ===")
+r2 = requests.post(API, json={"message": "我还是觉得不太对劲。"})
+print(r2.json())
