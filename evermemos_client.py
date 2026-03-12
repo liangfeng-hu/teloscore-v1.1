@@ -7,7 +7,11 @@ from typing import Dict, List, Any
 class EverMemOSClient:
     """
     Minimal full-memory client for EverMemOS.
-    Focus: state/event persistence + memory-aware signal retrieval.
+    Competition-safe version:
+    - state persistence
+    - event persistence
+    - memory-aware signal retrieval
+    - lightweight pattern consolidation stub
     """
 
     def __init__(self, base_url: str = "http://localhost:1995", user_id: str = "user_001", timeout: int = 10):
@@ -20,9 +24,6 @@ class EverMemOSClient:
         return datetime.now(timezone.utc).isoformat()
 
     def store_state(self, u_vector: List[float], action: str, delta_u: float, extra: Dict[str, Any] | None = None):
-        """
-        State Memory + minimal Audit payload.
-        """
         payload = {
             "message_id": f"state_{int(datetime.now().timestamp())}",
             "create_time": self._now(),
@@ -45,10 +46,6 @@ class EverMemOSClient:
         return resp.json()
 
     def store_event(self, event_type: str, content: str, extra: Dict[str, Any] | None = None):
-        """
-        Event Memory.
-        event_type: conflict_event / clarify_event / goal_event / compress_event / rollback_event / pending_event
-        """
         payload = {
             "message_id": f"event_{event_type}_{int(datetime.now().timestamp())}",
             "create_time": self._now(),
@@ -71,21 +68,45 @@ class EverMemOSClient:
 
     def load_memory_signals(self) -> Dict[str, float]:
         """
-        Minimal memory-aware retrieval for competition demo.
-        Returns U-memory bias for conflict / uncertainty / telos.
+        Returns lightweight memory bias:
+        - U_con_memory
+        - U_unc_memory
+        - U_tel_memory
         """
-        resp = requests.post(
-            f"{self.api}/search",
-            json={
-                "query": "telos cognitive state",
-                "user_id": self.user_id,
-                "limit": 20,
-            },
-            timeout=self.timeout,
-        )
-        resp.raise_for_status()
+        memories = []
 
-        memories = resp.json().get("result", {}).get("memories", [])
+        # Try POST search first
+        try:
+            resp = requests.post(
+                f"{self.api}/search",
+                json={
+                    "query": "telos cognitive state",
+                    "user_id": self.user_id,
+                    "limit": 20,
+                },
+                timeout=self.timeout,
+            )
+            if resp.status_code == 200:
+                memories = resp.json().get("result", {}).get("memories", [])
+        except Exception:
+            memories = []
+
+        # Fallback: GET search if needed
+        if not memories:
+            try:
+                resp = requests.get(
+                    f"{self.api}/search",
+                    params={
+                        "query": "telos cognitive state",
+                        "user_id": self.user_id,
+                        "limit": 20,
+                    },
+                    timeout=self.timeout,
+                )
+                if resp.status_code == 200:
+                    memories = resp.json().get("result", {}).get("memories", [])
+            except Exception:
+                memories = []
 
         con = 0.0
         unc = 0.0
@@ -114,7 +135,7 @@ class EverMemOSClient:
 
     def consolidate_pattern(self) -> None:
         """
-        Minimal Pattern Memory stub for demo.
-        Keeps README / video statement honest: this is a lightweight competition build.
+        Minimal pattern-memory stub for competition demo.
+        This is intentionally lightweight and honest.
         """
         print("[Pattern Memory] lightweight consolidation executed.")
