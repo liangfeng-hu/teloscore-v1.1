@@ -97,7 +97,8 @@ Demo Video
 After recording your 90-second demo, place it in the repository root or docs/ and link it here.
 
 Example:
-[Watch Demo Video](demo.mp4)
+Watch Demo Video
+
 Citation
 @misc{teloscore2026,
   title={TelosCore Full-Memory Build: A Memory-Aware Cognitive Control Layer Powered by EverMemOS},
@@ -105,3 +106,25 @@ Citation
   year={2026},
   howpublished={https://github.com/liangfeng-hu/teloscore-v1.1},
 }
+<details> <summary><b>中文简介（点击展开）</b></summary>
+
+TelosCore 全量记忆版是一个建立在 EverMemOS 之上的“记忆驱动认知控制层”。
+
+它的关键点不是“把状态存起来”，而是：
+
+把事件写入长期记忆
+
+检索历史冲突/澄清/目标事件
+
+用历史记忆修正当前 
+𝑈
+U 向量
+
+让动作选择真正受到长期记忆影响
+
+当前仓库是全量记忆架构的最小可运行雏形，不是最终产品封板版。
+完整理论母版见：docs/FULL_MEMORY_ARCHITECTURE.md
+
+</details>
+
+If this repo helps, starring it is appreciated.
