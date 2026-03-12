@@ -1,5 +1,5 @@
-# TelosCore v1.1
-**A deterministic Cognitive Energy Regulation Layer for stable long-term memory agents**
+# TelosCore Full-Memory Build
+**A memory-aware cognitive control layer powered by EverMemOS**
 
 [![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue)](https://www.python.org/)
@@ -8,80 +8,100 @@
 ![Last Update](https://img.shields.io/github/last-commit/liangfeng-hu/teloscore-v1.1)
 [![Stars](https://img.shields.io/github/stars/liangfeng-hu/teloscore-v1.1?style=social)](https://github.com/liangfeng-hu/teloscore-v1.1/stargazers)
 
-TelosCore v1.1 is a lightweight, backend-agnostic **stability control plane** for persistent memory agents.  
-It models internal cognitive tension as a scalar potential **U** (uncertainty / conflict / entropy / telos drift) and selects actions via global minimization of **ΔU** over a bounded control set:
+## Powered by EverMemOS
+TelosCore Full-Memory Build uses **EverMemOS** as the persistent memory substrate.
 
-**Clarify / Patch / Compress / Respond**
+- **State memory** is persisted across sessions
+- **Event memory** is written as conflict / clarify / goal events
+- Retrieved memory **actively modifies U**
+- Action selection is therefore **memory-aware**, not purely reactive
 
-Version **v1.1** adds energy-triggered **annealing** (recent-window plasticity) for controlled forgetting under sustained high tension.
+This repository is the **minimal running full-memory prototype** of the broader Full-Memory Architecture documented in `docs/FULL_MEMORY_ARCHITECTURE.md`.
 
 ---
 
 ## What this repo contains
-- `telos_core.py` — core energy computation + ΔU action selection + annealing
+- `telos_core.py` — core cognitive energy computation + action selection
+- `evermemos_client.py` — EverMemOS client for state/event memory persistence
 - `app.py` — FastAPI server (port 8000)
-- `dashboard_pro.py` — Streamlit dashboard (visualizes U and components)
-- `demo_script.py` — quick demo runner
-- `auto_make_figs.py` — generates the official triptych evidence figure
-- `assets/00_triptych.png` — evidence chain figure (Baseline → Spike → Anneal)
+- `dashboard_pro.py` — Streamlit dashboard
+- `demo_script.py` — demo for memory-aware decision shift
+- `auto_make_figs.py` — generates the evidence figure
+- `assets/00_triptych.png` — Baseline → Spike → Anneal evidence
+- `docs/TelosCore_v1.1.pdf` — paper PDF
+- `docs/FULL_MEMORY_ARCHITECTURE.md` — full-memory architecture SSOT
 
 ---
 
-## Quick start (reproducible)
+## Quick start
 ```bash
 git clone https://github.com/liangfeng-hu/teloscore-v1.1.git
 cd teloscore-v1.1
 pip install -r requirements.txt
-
-# generate evidence figure
-python auto_make_figs.py
-
-# run API
+Start EverMemOS
+docker compose up -d
+Run the demo
+python demo_script.py
+Run the API
 uvicorn app:app --reload --port 8000
-
-# run dashboard
+Run the dashboard
 streamlit run dashboard_pro.py
-
-Reproducible evidence (video-free)
+Reproducible evidence
 
 Run:
 python auto_make_figs.py
+It generates the official evidence chain:
 
-It produces the official evidence chain:
-
-Quantitative snapshot (auto-generated)
+Quantitative snapshot
 
 Stage	Total U	Unc.	Confl.	Ent.	Plasticity
 Baseline	0.495	0.000	0.000	0.005	0.925
 Spike	0.625	0.540	0.000	0.015	0.882
 Anneal	0.000	0.000	0.000	0.000	0.963
+Memory-aware behavior
+
+This repository demonstrates a key capability:
+
+historical memory changes current action selection
+
+Example:
+
+first run stores conflict_event
+
+second run retrieves historical conflict memory
+
+retrieved memory raises 
+𝑈
+c
+o
+n
+U
+con
+	​
+
+
+the chosen action shifts toward Patch
+
+This is the central difference between a memory-backed archive and a memory-aware cognitive controller.
+
 Paper
 
 PDF: TelosCore v1.1 Paper
 
-If the link is broken: make sure the PDF is uploaded to docs/TelosCore_v1.1.pdf.
+Architecture Document
 
+SSOT: Full Memory Architecture
+
+Demo Video
+
+After recording your 90-second demo, place it in the repository root or docs/ and link it here.
+
+Example:
+[Watch Demo Video](demo.mp4)
 Citation
 @misc{teloscore2026,
-  title={TelosCore v1.1: A Deterministic Cognitive Energy Regulation Layer for Long-Term Memory Agents},
+  title={TelosCore Full-Memory Build: A Memory-Aware Cognitive Control Layer Powered by EverMemOS},
   author={Liangfeng Hu},
   year={2026},
   howpublished={https://github.com/liangfeng-hu/teloscore-v1.1},
 }
-<details> <summary><b>中文简介（点击展开）</b></summary>
-
-TelosCore v1.1 是一个轻量级、可插拔的“稳定性控制层”。
-它将长期对话中的认知张力（不确定性/冲突/噪声熵/目标偏离）统一为标量势能 U，并在每一步通过最小化 ΔU 来确定性选择动作：
-
-Clarify / Patch / Compress / Respond
-
-v1.1 增加了“退火”（annealing）：当张力持续过高时，仅对近期滑动窗口记忆做受控衰减，避免不稳定痕迹无限积累。
-
-论文 PDF：docs/TelosCore_v1.1.pdf
-图证链：assets/00_triptych.png
-
-</details>
-
-Made for the 2026 competition.
-If this repo helps, starring it is appreciated.
-::contentReference[oaicite:0]{index=0}
