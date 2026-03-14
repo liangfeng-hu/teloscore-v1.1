@@ -11,25 +11,28 @@
 ## Powered by EverMemOS
 TelosCore Full-Memory Build uses **EverMemOS** as the persistent memory substrate.
 
-- **State memory** is persisted across sessions
-- **Event memory** is written as conflict / clarify / goal events
-- Retrieved memory **actively modifies U**
-- Action selection is therefore **memory-aware**, not purely reactive
+- State memory is persisted across sessions
+- Event memory is written as conflict / clarify / goal events
+- Retrieved memory actively modifies U
+- Action selection is therefore memory-aware, not purely reactive
 
-This repository is the **minimal running full-memory prototype** of the broader Full-Memory Architecture documented in `docs/FULL_MEMORY_ARCHITECTURE.md`.
+This repository provides a **minimal running full-memory prototype** for the competition.  
+The broader architecture is documented in `docs/FULL_MEMORY_ARCHITECTURE.md`.
 
 ---
 
 ## What this repo contains
 - `telos_core.py` — core cognitive energy computation + action selection
-- `evermemos_client.py` — EverMemOS client for state/event memory persistence
-- `app.py` — FastAPI server (port 8000)
+- `evermemos_client.py` — EverMemOS client for state/event persistence
+- `app.py` — FastAPI server
 - `dashboard_pro.py` — Streamlit dashboard
-- `demo_script.py` — demo for memory-aware decision shift
-- `auto_make_figs.py` — generates the evidence figure
+- `demo_script.py` — two-session memory-aware demo
+- `auto_make_figs.py` — evidence figure generator
 - `assets/00_triptych.png` — Baseline → Spike → Anneal evidence
 - `docs/TelosCore_v1.1.pdf` — paper PDF
-- `docs/FULL_MEMORY_ARCHITECTURE.md` — full-memory architecture SSOT
+- `docs/FULL_MEMORY_ARCHITECTURE.md` — architecture SSOT
+- `docs/COMPETITION_EVIDENCE.md` — evidence checklist
+- `docs/EVAL_PROTOCOL.md` — evaluation claim boundary
 
 ---
 
@@ -40,16 +43,15 @@ cd teloscore-v1.1
 pip install -r requirements.txt
 Start EverMemOS
 docker compose up -d
-Run the API
+Start API
 uvicorn app:app --reload --port 8000
-Run the demo
+Run demo
 python demo_script.py
-Run the dashboard
+Run dashboard
 streamlit run dashboard_pro.py
 Reproducible evidence
 
 Run:
-python auto_make_figs.py
 It generates the official evidence chain:
 
 Quantitative snapshot
@@ -82,15 +84,21 @@ con
 
 the chosen action shifts toward Patch
 
-This is the central difference between a memory-backed archive and a memory-aware cognitive controller.
-
 Paper
 
 PDF: TelosCore v1.1 Paper
 
-Architecture Document
+Architecture
 
 SSOT: Full Memory Architecture
+
+Evidence
+
+Checklist: Competition Evidence
+
+Evaluation Policy
+
+Boundary: Evaluation Protocol
 
 Demo Video
 
@@ -110,15 +118,13 @@ Citation
 
 TelosCore 全量记忆版是一个建立在 EverMemOS 之上的“记忆驱动认知控制层”。
 
-它的关键点不是“把状态存起来”，而是：
+它不是单纯把状态存起来，而是：
 
-把事件写入长期记忆
+把关键事件写入长期记忆
 
 检索历史冲突/澄清/目标事件
 
-用历史记忆修正当前 
-𝑈
-U 向量
+用历史记忆修正当前 U 向量
 
 让动作选择真正受到长期记忆影响
 
