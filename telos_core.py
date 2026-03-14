@@ -1,15 +1,23 @@
+import os
 import time
-import requests
-from dataclasses import dataclass, asdict
-from typing import List, Dict, Any
+import math
+import asyncio
+from dataclasses import dataclass
+from typing import Dict, Any, List
 
-from evermemos_client import EverMemOSClient
+from evermemos_client_v1.2 import EverMemOSClientV12
 
-# =========================
-# Base config
-# =========================
-EVERMEMOS_API = "http://localhost:1995/api/v1"
-USER_ID = "user_001"
+
+CLIENT = EverMemOSClientV12()
+
+
+@dataclass
+class TelosState:
+    uncertainty: float = 0.0
+    conflict: float = 0.0
+    entropy: float = 0.3
+    telos_distance: float = 0.6
+
 
 WEIGHTS = {
     "uncertainty": 1.2,
@@ -18,271 +26,214 @@ WEIGHTS = {
     "telos": 1.4,
 }
 
-ACTION_EFFECT = {
-    "clarify": {"uncertainty": -0.60},
-    "patch": {"conflict": -0.80},
-    "compress": {"entropy": -0.70},
-    "respond": {"telos_distance": -0.40, "uncertainty": +0.10},
-}
 
-PLASTICITY = True
-PLASTICITY_TRIGGER_U = 0.8
-ANNEAL_RATE = 0.15
-REINFORCE_RATE = 0.05
-MIN_WEIGHT_KEEP = 0.25
-RECENT_WINDOW = 30
+class TopologicalMemory:
+    """
+    轻量艾宾浩斯显著性层（v1.2 最小版）
+    """
+    def __init__(self, half_life: float = 86400.0):
+        self.half_life = half_life
 
-memory_client = EverMemOSClient(base_url="http://localhost:1995", user_id=USER_ID)
+    def calculate_salience(self, memory_item: Dict[str, Any], current_time: float) -> float:
+        initial_strength = memory_item.get("intensity", 1.0)
+        timestamp = memory_item.get("timestamp", current_time)
+        elapsed = current_time - timestamp
+        return initial_strength * math.exp(-elapsed / self.half_life)
 
-# =========================
-# State
-# =========================
-@dataclass
-class TelosState:
-    uncertainty: float = 0.4
-    conflict: float = 0.0
-    entropy: float = 0.0
-    telos_distance: float = 0.5
-    phase: str = "initial"
 
-state = TelosState()
-energy_history: List[float] = []
-component_history: List[Dict[str, float]] = []
-local_memories: List[Dict[str, Any]] = []
+class IntentPredictor:
+    """
+    最小可运行的意图预测器
+    """
+    def __init__(self):
+        self.threshold = 0.85
 
-def clamp01(x: float) -> float:
-    return max(0.0, min(1.0, x))
+    def analyze(self, text: str) -> Dict[str, Any]:
+        text_l = text.lower()
+        if any(k in text_l for k in ["图", "画", "plot", "fig", "visual"]):
+            return {"action": "auto_make_figs", "confidence": 0.92, "args": {"baseline": 1.0, "amplitude": 0.45}}
+        return {"action": "wait", "confidence": 1.0, "args": {}}
 
-# =========================
-# Local fallback memory
-# =========================
-def store_event_local(content: str):
-    local_memories.append({
-        "content": content,
-        "timestamp": time.time(),
-        "weight": 1.0
-    })
 
-    try:
-        requests.post(
-            f"{EVERMEMOS_API}/memories",
-            json={"content": content, "user_id": USER_ID},
-            timeout=2
+class ContextGuard:
+    """
+    轻量上下文安全阀
+    """
+    def __init__(self, max_tokens: int = 8000):
+        self.max_tokens = max_tokens
+        self.context: List[Dict[str, Any]] = []
+
+    def safe_append(self, item: Dict[str, Any]):
+        est_total = sum(len(str(m)) // 4 for m in self.context)
+        if est_total > self.max_tokens:
+            self.context = self.context[-int(len(self.context) * 0.7):]
+        self.context.append(item)
+
+
+class TelosCore:
+    def __init__(self):
+        self.memory_index = TopologicalMemory()
+        self.intent_predictor = IntentPredictor()
+        self.context_guard = ContextGuard()
+        self.active_tasks: List[asyncio.Task] = []
+        self.state = TelosState()
+
+    def _calculate_cognitive_energy(self) -> float:
+        """
+        U = 1.2 * uncertainty + 1.8 * conflict + 1.0 * entropy + 1.4 * telos_distance
+        """
+        s = self.state
+        return (
+            WEIGHTS["uncertainty"] * s.uncertainty
+            + WEIGHTS["conflict"] * s.conflict
+            + WEIGHTS["entropy"] * s.entropy
+            + WEIGHTS["telos"] * s.telos_distance
         )
-    except Exception:
-        pass
 
-def retrieve_context(query: str):
-    try:
-        resp = requests.post(
-            f"{EVERMEMOS_API}/memories/search",
-            json={"query": query, "user_id": USER_ID},
-            timeout=3
+    def _pure_reactive_action(self) -> str:
+        """
+        不考虑历史记忆时的简单反应动作
+        """
+        U = self._calculate_cognitive_energy()
+        if self.state.conflict > 0.30:
+            return "patch"
+        if self.state.uncertainty > 0.45:
+            return "clarify"
+        if self.state.entropy > 0.70:
+            return "compress"
+        if U < 0.9:
+            return "respond"
+        return "clarify"
+
+    async def _load_memory_bias(self, user_input: str) -> Dict[str, float]:
+        """
+        从 EverMemOS 取回历史记忆并形成修正量
+        """
+        past = await CLIENT.search(user_input, retrieve_method="rrf", top_k=10)
+
+        con_score = sum(m.get("metadata", {}).get("conflict", 0) * m.get("similarity", 0) for m in past) * 0.45
+        unc_score = sum(m.get("metadata", {}).get("uncertainty", 0) * m.get("similarity", 0) for m in past) * 0.35
+        tel_score = sum(m.get("metadata", {}).get("telos_bonus", 0) for m in past) * -0.18
+
+        return {
+            "U_con_memory": min(0.8, con_score),
+            "U_unc_memory": min(0.7, unc_score),
+            "U_tel_memory": max(-0.6, tel_score),
+        }
+
+    def _apply_current_input_signals(self, user_input: str):
+        """
+        当前输入的快速规则/启发式更新（保留最小版）
+        """
+        txt = user_input.lower()
+
+        if any(k in user_input for k in ["错", "不行", "不对劲", "冲突"]) or "wrong" in txt:
+            self.state.conflict = min(1.0, self.state.conflict + 0.35)
+
+        if any(k in user_input for k in ["也许", "不确定", "可能"]) or "maybe" in txt or "unsure" in txt:
+            self.state.uncertainty = min(1.0, self.state.uncertainty + 0.25)
+
+        if any(k in user_input for k in ["目标", "计划", "恢复", "原计划"]) or "goal" in txt or "plan" in txt:
+            self.state.telos_distance = max(0.0, self.state.telos_distance - 0.15)
+        else:
+            self.state.telos_distance = min(1.0, self.state.telos_distance + 0.03)
+
+        self.state.entropy = min(1.0, self.state.entropy + len(user_input.split()) / 100.0)
+
+    def _memory_aware_action(self) -> str:
+        """
+        考虑 U 修正后的动作
+        """
+        U = self._calculate_cognitive_energy()
+
+        if self.state.conflict > 0.30:
+            return "patch"
+        if self.state.uncertainty > 0.45:
+            return "clarify"
+        if self.state.entropy > 0.75:
+            return "compress"
+        if U < 0.9:
+            return "respond"
+        return "clarify"
+
+    async def process(self, user_input: str) -> Dict[str, Any]:
+        now = time.time()
+
+        # 1. 当前输入先更新
+        self._apply_current_input_signals(user_input)
+
+        # 2. 纯反应动作（用于对照）
+        action_before = self._pure_reactive_action()
+
+        # 3. 意图预测 + 抢跑
+        intent = self.intent_predictor.analyze(user_input)
+        if intent["confidence"] >= self.intent_predictor.threshold and intent["action"] != "wait":
+            task = asyncio.create_task(self._shadow_execute(intent["action"], intent["args"]))
+            self.active_tasks.append(task)
+
+        # 4. 历史记忆修正
+        signals = await self._load_memory_bias(user_input)
+        self.state.conflict = min(1.0, self.state.conflict + signals["U_con_memory"])
+        self.state.uncertainty = min(1.0, self.state.uncertainty + signals["U_unc_memory"])
+        self.state.telos_distance = max(0.0, min(1.0, self.state.telos_distance + signals["U_tel_memory"]))
+
+        print(
+            f"[Memory Correction] "
+            f"U_con_memory={signals['U_con_memory']:.2f} | "
+            f"U_unc_memory={signals['U_unc_memory']:.2f} | "
+            f"U_tel_memory={signals['U_tel_memory']:.2f}"
         )
-        data = resp.json()
-        return data.get("result", {}).get("memories", []) or data.get("memories", [])
-    except Exception:
-        candidates = local_memories[-80:]
-        filtered = [m for m in candidates if m["weight"] >= MIN_WEIGHT_KEEP]
-        filtered.sort(key=lambda x: x["weight"], reverse=True)
-        return filtered[:6]
 
-# =========================
-# Signal updates
-# =========================
-def update_signals(text: str):
-    words = len(text.split())
-    state.entropy = clamp01(state.entropy + words / 200.0)
+        # 5. 记忆感知动作
+        action = self._memory_aware_action()
+        energy = self._calculate_cognitive_energy()
 
-    if any(k in text for k in ["但是", "不过", "却", "相反", "一方面", "另一方面", "错", "不对劲", "wrong"]):
-        state.conflict = clamp01(state.conflict + 0.45)
-
-    if any(k in text for k in ["也许", "不确定", "不知道", "可能", "大概", "maybe", "unsure"]):
-        state.uncertainty = clamp01(state.uncertainty + 0.35)
-
-    if any(k in text for k in ["目标", "计划", "想要", "打算", "决定", "健康", "坚持", "goal", "plan", "want"]):
-        state.telos_distance = clamp01(state.telos_distance - 0.15)
-    else:
-        state.telos_distance = clamp01(state.telos_distance + 0.05)
-
-# =========================
-# Energy
-# =========================
-def energy_components(s: TelosState):
-    u_unc = WEIGHTS["uncertainty"] * s.uncertainty
-    u_con = WEIGHTS["conflict"] * s.conflict
-    u_ent = WEIGHTS["entropy"] * s.entropy
-    u_tel = WEIGHTS["telos"] * s.telos_distance
-    total = u_unc + u_con + u_ent + u_tel
-
-    return {
-        "total": total,
-        "uncertainty": u_unc,
-        "conflict": u_con,
-        "entropy": u_ent,
-        "telos": u_tel,
-    }
-
-def apply_effect(s: TelosState, effect: dict):
-    ns = TelosState(**asdict(s))
-    for k, v in effect.items():
-        if hasattr(ns, k):
-            setattr(ns, k, clamp01(getattr(ns, k) + v))
-    return ns
-
-def choose_action(s: TelosState):
-    current = energy_components(s)["total"]
-    best_action = "respond"
-    best_delta = 0.0
-
-    for act, eff in ACTION_EFFECT.items():
-        ns = apply_effect(s, eff)
-        nxt = energy_components(ns)["total"]
-        delta = nxt - current
-        if delta < best_delta:
-            best_delta = delta
-            best_action = act
-
-    return best_action, round(best_delta, 4)
-
-def respond_text(action: str):
-    if action == "clarify":
-        return "我还不够确定。你更偏向哪一种：A) 继续当前想法 B) 改成相反做法？"
-    if action == "patch":
-        return "我检测到内部冲突。更像：A) 场景变了 B) 身体/状态变了？"
-    if action == "compress":
-        state.phase = "compressed"
-        return "我先把近期信息整理压缩成更清晰的要点，再继续。"
-    return "收到。我继续沿着当前目标给出下一步建议。"
-
-# =========================
-# Plasticity
-# =========================
-def plasticity_score():
-    if not local_memories:
-        return 1.0
-    recent = local_memories[-10:]
-    return round(sum(m["weight"] for m in recent) / len(recent), 3)
-
-def anneal_memories(triggered: bool):
-    if not PLASTICITY:
-        return
-
-    if state.telos_distance < 0.3:
-        for m in local_memories[-12:]:
-            m["weight"] = clamp01(m["weight"] + REINFORCE_RATE)
-
-    if not triggered:
-        return
-
-    window = local_memories[-RECENT_WINDOW:]
-    for m in window:
-        decay = ANNEAL_RATE * (0.5 + 0.5 * max(state.conflict, state.entropy))
-        m["weight"] = clamp01(m["weight"] - decay)
-
-# =========================
-# Main step
-# =========================
-def telos_step(user_input: str, _state: TelosState | None = None, component_history_override=None):
-    global state, component_history, energy_history
-
-    if _state is not None:
-        state = _state
-    if component_history_override is not None:
-        component_history = component_history_override
-
-    # 1) local fallback record
-    store_event_local(user_input)
-
-    # 2) current signal updates
-    update_signals(user_input)
-
-    # 3) pure reactive baseline (copy current state before memory correction)
-    pure_state = TelosState(**asdict(state))
-    action_before, delta_before = choose_action(pure_state)
-
-    # 4) Full-Memory Build: memory-aware correction
-    signals = memory_client.load_memory_signals()
-    state.conflict = min(1.0, state.conflict + signals["U_con_memory"])
-    state.uncertainty = min(1.0, state.uncertainty + signals["U_unc_memory"])
-    state.telos_distance = min(1.0, state.telos_distance + signals["U_tel_memory"])
-
-    print(
-        f"[Memory Correction] U_con_memory={signals['U_con_memory']:.2f} | "
-        f"U_unc_memory={signals['U_unc_memory']:.2f} | "
-        f"U_tel_memory={signals['U_tel_memory']:.2f}"
-    )
-
-    # 5) memory-aware current energy
-    comps_before = energy_components(state)
-
-    # 6) final decision
-    action, delta = choose_action(state)
-
-    # 7) apply action
-    new_state = apply_effect(state, ACTION_EFFECT[action])
-    state.uncertainty = new_state.uncertainty
-    state.conflict = new_state.conflict
-    state.entropy = new_state.entropy
-    state.telos_distance = new_state.telos_distance
-
-    comps_after = energy_components(state)
-
-    energy_history.append(round(comps_after["total"], 4))
-    component_history.append(comps_after)
-
-    triggered = comps_before["total"] >= PLASTICITY_TRIGGER_U
-    anneal_memories(triggered)
-
-    ctx = retrieve_context(user_input[:20])
-
-    # 8) Persist state + events to EverMemOS
-    u_vec = [state.uncertainty, state.conflict, state.entropy, state.telos_distance]
-    try:
-        memory_client.store_state(
-            u_vec,
-            action,
-            delta,
-            extra={
-                "phase": state.phase,
-                "context_size": len(ctx),
-                "plasticity_triggered": triggered,
-                "pure_reactive_action": action_before,
-                "pure_reactive_delta": delta_before,
+        # 6. 持久化当前输入到 EverMemOS
+        await CLIENT.store(
+            user_input,
+            memory_type="event_log",
+            metadata={
+                "conflict": 1 if any(k in user_input for k in ["错", "不行", "不对劲", "冲突"]) else 0,
+                "uncertainty": 1 if any(k in user_input for k in ["也许", "不确定", "可能"]) else 0,
+                "telos_bonus": -0.15 if any(k in user_input for k in ["目标", "计划", "恢复", "原计划"]) else 0.05,
+                "intensity": 2.0,
+                "timestamp": now,
+                "U": energy,
             },
         )
+
         print("[EverMemOS] state persisted.")
-    except Exception as e:
-        print(f"[EverMemOS] state persistence skipped: {e}")
 
-    try:
+        # 7. Pattern consolidation
+        await CLIENT.consolidate_patterns()
+
+        # 8. 终极补丁：能量耗散（避免 patch 后永远高冲突卡死）
         if action == "patch":
-            memory_client.store_event("conflict_event", user_input)
-            print("[EverMemOS] conflict_event persisted.")
-        elif action == "clarify":
-            memory_client.store_event("clarify_event", user_input)
-            print("[EverMemOS] clarify_event persisted.")
-        elif state.telos_distance > 0.6:
-            memory_client.store_event("goal_event", user_input, {"telos": state.telos_distance})
-            print("[EverMemOS] goal_event persisted.")
-    except Exception as e:
-        print(f"[EverMemOS] event persistence skipped: {e}")
+            self.state.conflict *= 0.2
 
-    memory_client.consolidate_pattern()
+        self.context_guard.safe_append({"role": "user", "content": user_input})
 
-    print(f"[Decision] Pure Reactive: {action_before} -> Memory-Aware: {action}")
+        print(f"[Decision] Pure Reactive: {action_before} -> Memory-Aware: {action}")
 
-    return {
-        "response": respond_text(action),
-        "action": action,
-        "delta_U": delta,
-        "energy": round(comps_after["total"], 4),
-        "components": {k: round(v, 4) for k, v in comps_after.items()},
-        "plasticity_enabled": PLASTICITY,
-        "plasticity_score": plasticity_score(),
-        "plasticity_triggered": triggered,
-        "phase": state.phase,
-        "context_size": len(ctx),
-        "pure_reactive_action": action_before,
-        "memory_signals": signals,
-    }, component_history
+        return {
+            "action": action,
+            "energy": round(energy, 3),
+            "U_con_memory": round(signals["U_con_memory"], 2),
+            "U_unc_memory": round(signals["U_unc_memory"], 2),
+            "U_tel_memory": round(signals["U_tel_memory"], 2),
+        }
+
+    async def _shadow_execute(self, action: str, args: Dict[str, Any]):
+        """
+        真正的后台抢跑：动态调起跨模态/图表生成器
+        """
+        if action == "auto_make_figs":
+            try:
+                import auto_make_figs_v1.2
+                await auto_make_figs_v1.2.run(args)
+                print(f"[抢跑] {action} 跨模态渲染完毕，已落盘至 assets/。")
+            except Exception as e:
+                print(f"[抢跑底层异常] {e}")
+        else:
+            await asyncio.sleep(0.3)
+            print(f"[抢跑] {action} 未知动作已忽略")
