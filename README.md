@@ -40,10 +40,10 @@ cd teloscore-v1.1
 pip install -r requirements.txt
 Start EverMemOS
 docker compose up -d
-Run the demo
-python demo_script.py
 Run the API
 uvicorn app:app --reload --port 8000
+Run the demo
+python demo_script.py
 Run the dashboard
 streamlit run dashboard_pro.py
 Reproducible evidence
