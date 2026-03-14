@@ -387,7 +387,3 @@ TelosCore Full-Memory Build 的本质不是“更会存”，而是：
 > 让长期记忆真正进入势能计算、动作裁决、审计闭环与回滚逻辑。
 
 这就是它相对于普通 memory-backed agent 的根本区别。
-最后提交：
-git add evermemos_client.py telos_core.py demo_script.py README.md docs/FULL_MEMORY_ARCHITECTURE.md
-git commit -m "Add Full-Memory Build with EverMemOS integration"
-git push
