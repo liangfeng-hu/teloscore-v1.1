@@ -1,4 +1,3 @@
-# telos_core.py
 import time
 import requests
 from dataclasses import dataclass, asdict
@@ -7,7 +6,7 @@ from typing import List, Dict, Any
 from evermemos_client import EverMemOSClient
 
 # =========================
-# 基础配置
+# Base config
 # =========================
 EVERMEMOS_API = "http://localhost:1995/api/v1"
 USER_ID = "user_001"
@@ -20,27 +19,23 @@ WEIGHTS = {
 }
 
 ACTION_EFFECT = {
-    "clarify": {"uncertainty": -0.6},
-    "patch": {"conflict": -0.8},
-    "compress": {"entropy": -0.7},
-    "respond": {"telos_distance": -0.4, "uncertainty": +0.1},
+    "clarify": {"uncertainty": -0.60},
+    "patch": {"conflict": -0.80},
+    "compress": {"entropy": -0.70},
+    "respond": {"telos_distance": -0.40, "uncertainty": +0.10},
 }
 
-# EverMemOS integration
-memory_client = EverMemOSClient(base_url="http://localhost:1995", user_id=USER_ID)
-
-# =========================
-# v1.1 Plasticity 开关
-# =========================
-PLASTICITY = 1
+PLASTICITY = True
 PLASTICITY_TRIGGER_U = 0.8
 ANNEAL_RATE = 0.15
 REINFORCE_RATE = 0.05
 MIN_WEIGHT_KEEP = 0.25
 RECENT_WINDOW = 30
 
+memory_client = EverMemOSClient(base_url="http://localhost:1995", user_id=USER_ID)
+
 # =========================
-# 状态
+# State
 # =========================
 @dataclass
 class TelosState:
@@ -59,7 +54,7 @@ def clamp01(x: float) -> float:
     return max(0.0, min(1.0, x))
 
 # =========================
-# 存储（保留本地回退）
+# Local fallback memory
 # =========================
 def store_event_local(content: str):
     local_memories.append({
@@ -68,7 +63,6 @@ def store_event_local(content: str):
         "weight": 1.0
     })
 
-    # 保持旧接口兼容：本地 + 远端都尝试
     try:
         requests.post(
             f"{EVERMEMOS_API}/memories",
@@ -79,7 +73,6 @@ def store_event_local(content: str):
         pass
 
 def retrieve_context(query: str):
-    # 旧检索保留为 fallback
     try:
         resp = requests.post(
             f"{EVERMEMOS_API}/memories/search",
@@ -95,25 +88,25 @@ def retrieve_context(query: str):
         return filtered[:6]
 
 # =========================
-# 信号更新
+# Signal updates
 # =========================
 def update_signals(text: str):
     words = len(text.split())
     state.entropy = clamp01(state.entropy + words / 200.0)
 
-    if any(k in text for k in ["但是", "不过", "却", "相反", "一方面", "另一方面", "错", "不对劲"]):
+    if any(k in text for k in ["但是", "不过", "却", "相反", "一方面", "另一方面", "错", "不对劲", "wrong"]):
         state.conflict = clamp01(state.conflict + 0.45)
 
-    if any(k in text for k in ["也许", "不确定", "不知道", "可能", "大概"]):
+    if any(k in text for k in ["也许", "不确定", "不知道", "可能", "大概", "maybe", "unsure"]):
         state.uncertainty = clamp01(state.uncertainty + 0.35)
 
-    if any(k in text for k in ["目标", "计划", "想要", "打算", "决定", "健康", "坚持"]):
+    if any(k in text for k in ["目标", "计划", "想要", "打算", "决定", "健康", "坚持", "goal", "plan", "want"]):
         state.telos_distance = clamp01(state.telos_distance - 0.15)
     else:
         state.telos_distance = clamp01(state.telos_distance + 0.05)
 
 # =========================
-# 能量
+# Energy
 # =========================
 def energy_components(s: TelosState):
     u_unc = WEIGHTS["uncertainty"] * s.uncertainty
@@ -188,16 +181,27 @@ def anneal_memories(triggered: bool):
         m["weight"] = clamp01(m["weight"] - decay)
 
 # =========================
-# 主逻辑
+# Main step
 # =========================
-def telos_step(user_input: str):
-    # 1) 当前输入先写入本地回退记忆
+def telos_step(user_input: str, _state: TelosState | None = None, component_history_override=None):
+    global state, component_history, energy_history
+
+    if _state is not None:
+        state = _state
+    if component_history_override is not None:
+        component_history = component_history_override
+
+    # 1) local fallback record
     store_event_local(user_input)
 
-    # 2) 当前输入更新信号
+    # 2) current signal updates
     update_signals(user_input)
 
-    # 3) Full-Memory Build: memory-aware correction
+    # 3) pure reactive baseline (copy current state before memory correction)
+    pure_state = TelosState(**asdict(state))
+    action_before, delta_before = choose_action(pure_state)
+
+    # 4) Full-Memory Build: memory-aware correction
     signals = memory_client.load_memory_signals()
     state.conflict = min(1.0, state.conflict + signals["U_con_memory"])
     state.uncertainty = min(1.0, state.uncertainty + signals["U_unc_memory"])
@@ -209,16 +213,13 @@ def telos_step(user_input: str):
         f"U_tel_memory={signals['U_tel_memory']:.2f}"
     )
 
-    # 4) 当前能量
+    # 5) memory-aware current energy
     comps_before = energy_components(state)
 
-    # 5) 纯反应式决策（用于对比展示）
-    action_before, delta_before = choose_action(state)
-
-    # 6) 最终动作（当前版本 memory correction 已进入状态，因此 choose_action 已是 memory-aware）
+    # 6) final decision
     action, delta = choose_action(state)
 
-    # 7) 应用动作
+    # 7) apply action
     new_state = apply_effect(state, ACTION_EFFECT[action])
     state.uncertainty = new_state.uncertainty
     state.conflict = new_state.conflict
@@ -246,6 +247,8 @@ def telos_step(user_input: str):
                 "phase": state.phase,
                 "context_size": len(ctx),
                 "plasticity_triggered": triggered,
+                "pure_reactive_action": action_before,
+                "pure_reactive_delta": delta_before,
             },
         )
         print("[EverMemOS] state persisted.")
@@ -280,4 +283,6 @@ def telos_step(user_input: str):
         "plasticity_triggered": triggered,
         "phase": state.phase,
         "context_size": len(ctx),
-    }
+        "pure_reactive_action": action_before,
+        "memory_signals": signals,
+    }, component_history
