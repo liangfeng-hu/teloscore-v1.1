@@ -31,8 +31,6 @@ The broader architecture is documented in `docs/FULL_MEMORY_ARCHITECTURE.md`.
 - `assets/00_triptych.png` — Baseline → Spike → Anneal evidence
 - `docs/TelosCore_v1.1.pdf` — paper PDF
 - `docs/FULL_MEMORY_ARCHITECTURE.md` — architecture SSOT
-- `docs/COMPETITION_EVIDENCE.md` — evidence checklist
-- `docs/EVAL_PROTOCOL.md` — evaluation claim boundary
 
 ---
 
@@ -52,6 +50,7 @@ streamlit run dashboard_pro.py
 Reproducible evidence
 
 Run:
+python auto_make_figs.py
 It generates the official evidence chain:
 
 Quantitative snapshot
@@ -94,11 +93,13 @@ SSOT: Full Memory Architecture
 
 Evidence
 
-Checklist: Competition Evidence
+See:
 
-Evaluation Policy
+demo_script.py
 
-Boundary: Evaluation Protocol
+assets/00_triptych.png
+
+docs/TelosCore_v1.1.pdf
 
 Demo Video
 
@@ -118,13 +119,15 @@ Citation
 
 TelosCore 全量记忆版是一个建立在 EverMemOS 之上的“记忆驱动认知控制层”。
 
-它不是单纯把状态存起来，而是：
+它的关键点不是“把状态存起来”，而是：
 
 把关键事件写入长期记忆
 
 检索历史冲突/澄清/目标事件
 
-用历史记忆修正当前 U 向量
+用历史记忆修正当前 
+𝑈
+U 向量
 
 让动作选择真正受到长期记忆影响
 
