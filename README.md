@@ -31,10 +31,13 @@ The broader architecture is documented in `docs/FULL_MEMORY_ARCHITECTURE.md`.
 - `assets/00_triptych.png` — Baseline → Spike → Anneal evidence
 - `docs/TelosCore_v1.1.pdf` — paper PDF
 - `docs/FULL_MEMORY_ARCHITECTURE.md` — architecture SSOT
+- `docs/COMPETITION_EVIDENCE.md` — evidence checklist
+- `docs/EVAL_PROTOCOL.md` — evaluation claim boundary
 
 ---
 
 ## Quick start
+
 ```bash
 git clone https://github.com/liangfeng-hu/teloscore-v1.1.git
 cd teloscore-v1.1
@@ -54,7 +57,6 @@ python auto_make_figs.py
 It generates the official evidence chain:
 
 Quantitative snapshot
-
 Stage	Total U	Unc.	Confl.	Ent.	Plasticity
 Baseline	0.495	0.000	0.000	0.005	0.925
 Spike	0.625	0.540	0.000	0.015	0.882
@@ -83,6 +85,8 @@ con
 
 the chosen action shifts toward Patch
 
+This is the central difference between a memory-backed archive and a memory-aware cognitive controller.
+
 Paper
 
 PDF: TelosCore v1.1 Paper
@@ -91,21 +95,20 @@ Architecture
 
 SSOT: Full Memory Architecture
 
-Evidence
+Competition evidence
 
-See:
+Checklist: Competition Evidence
 
-demo_script.py
+Evaluation protocol
 
-assets/00_triptych.png
+Boundary: Evaluation Protocol
 
-docs/TelosCore_v1.1.pdf
-
-Demo Video
+Demo video
 
 After recording your 90-second demo, place it in the repository root or docs/ and link it here.
 
 Example:
+
 Watch Demo Video
 
 Citation
