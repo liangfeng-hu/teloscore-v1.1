@@ -33,11 +33,17 @@ This provides direct evidence that memory changes action selection.
 1. Start EverMemOS.
 2. Start the API server.
 3. Run `python demo_script.py`.
-4. Observe:
-   - state persisted
-   - event persisted
-   - memory correction
-   - pure reactive vs memory-aware decision shift
+4. Observe the following runtime evidence in the console:
+   - `[Memory Correction] U_con_memory=... | U_unc_memory=... | U_tel_memory=...`
+   - `[EverMemOS] state persisted.`
+   - `[EverMemOS] conflict_event persisted.` or `[EverMemOS] clarify_event persisted.`
+   - `[Decision] Pure Reactive: ... -> Memory-Aware: ...`
+
+## Expected interpretation
+- The first session writes conflict or clarification events into EverMemOS.
+- The second session retrieves historical memory and converts it into `u_memory` bias.
+- The retrieved bias modifies the current U-vector before action selection.
+- The final action is therefore memory-aware rather than purely reactive.
 
 ## Key files
 - `evermemos_client.py`
