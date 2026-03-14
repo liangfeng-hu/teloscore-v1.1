@@ -4,6 +4,7 @@ This document summarizes the minimal reproducible evidence chain for the competi
 
 ## Evidence 1: Persistent memory
 The system stores state and event records into EverMemOS:
+
 - `state_memory`
 - `conflict_event`
 - `clarify_event`
@@ -22,15 +23,16 @@ These signals modify the current cognitive state before action selection.
 
 ## Evidence 3: Decision shift
 The system prints both:
+
 - pure reactive decision
 - memory-aware decision
 
 This provides direct evidence that memory changes action selection.
 
 ## Reproduction steps
-1. Start EverMemOS
-2. Start the API server
-3. Run `python demo_script.py`
+1. Start EverMemOS.
+2. Start the API server.
+3. Run `python demo_script.py`.
 4. Observe:
    - state persisted
    - event persisted
