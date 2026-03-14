@@ -6,8 +6,8 @@ from typing import Dict, List, Any
 
 class EverMemOSClient:
     """
-    Minimal full-memory client for EverMemOS.
-    Competition-safe version:
+    Minimal EverMemOS client for Full-Memory Build.
+    Competition-safe:
     - state persistence
     - event persistence
     - memory-aware signal retrieval
@@ -68,14 +68,15 @@ class EverMemOSClient:
 
     def load_memory_signals(self) -> Dict[str, float]:
         """
-        Returns lightweight memory bias:
+        Lightweight memory-aware retrieval.
+        Returns:
         - U_con_memory
         - U_unc_memory
         - U_tel_memory
         """
         memories = []
 
-        # Try POST search first
+        # try POST search first
         try:
             resp = requests.post(
                 f"{self.api}/search",
@@ -91,7 +92,7 @@ class EverMemOSClient:
         except Exception:
             memories = []
 
-        # Fallback: GET search if needed
+        # fallback GET if needed
         if not memories:
             try:
                 resp = requests.get(
@@ -135,7 +136,6 @@ class EverMemOSClient:
 
     def consolidate_pattern(self) -> None:
         """
-        Minimal pattern-memory stub for competition demo.
-        This is intentionally lightweight and honest.
+        Lightweight pattern consolidation stub for demo.
         """
         print("[Pattern Memory] lightweight consolidation executed.")
