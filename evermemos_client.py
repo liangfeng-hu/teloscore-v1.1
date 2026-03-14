@@ -136,6 +136,6 @@ class EverMemOSClient:
 
     def consolidate_pattern(self) -> None:
         """
-        Lightweight pattern consolidation stub for demo.
+        Lightweight pattern-memory stub for demo.
         """
         print("[Pattern Memory] lightweight consolidation executed.")
