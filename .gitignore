@@ -205,3 +205,17 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# TelosCore competition local artifacts
+locomo_report.json
+assets/energy_triptych_*.png
+assets/*.tmp.png
+
+# Local memory / debug stores
+docs/memory_db/
+docs/debug_db/
+
+# Local secret variants
+.env.local
+.env.dev
+.env.prod
