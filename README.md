@@ -37,7 +37,6 @@ The broader architecture is documented in `docs/FULL_MEMORY_ARCHITECTURE.md`.
 - `docs/EVAL_PROTOCOL.md` — evaluation claim boundary
 
 ---
-
 ## Quick start
 
 Clone the repository and install dependencies:
@@ -46,18 +45,24 @@ Clone the repository and install dependencies:
 git clone https://github.com/liangfeng-hu/teloscore-v1.1.git
 cd teloscore-v1.1
 pip install -r requirements.txt
+
 Start EverMemOS
 docker compose up -d
-Start API
+
+docker compose up -d
 uvicorn app:app --reload --port 8000
+
 Run demo
 python demo_script.py
-Run dashboard
+
+un dashboard
 streamlit run dashboard_pro.py
+
 Reproducible evidence
 
 Run:
 python auto_make_figs.py
+
 It generates the official evidence chain:
 
 Quantitative snapshot
@@ -132,3 +137,7 @@ TelosCore 全量记忆版是一个建立在 EverMemOS 之上的“记忆驱动�
 完整理论母版见：docs/FULL_MEMORY_ARCHITECTURE.md
 
 </details>
+
+If this repo helps, starring it is appreciated.
+
+
