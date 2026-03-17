@@ -81,7 +81,7 @@ class TelosCore:
         if action=="auto_make_figs":
             try:
                 import auto_make_figs_v1_2
-                await auto_make_figs_v1.2.run(args)
+                await auto_make_figs_v1_2.run(args)
                 print(f"[抢跑] {action} 跨模态渲染完毕，已落盘至 assets/")
             except Exception as e:
                 print(f"[抢跑底层异常] {e}")
