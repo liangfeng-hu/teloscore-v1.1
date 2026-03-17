@@ -1,5 +1,5 @@
 import asyncio
-from telos_core_v1.2 import TelosCore
+from telos_core_v1_2 import TelosCore
 
 async def run():
     core = TelosCore()
