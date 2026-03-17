@@ -1,6 +1,6 @@
 import asyncio
 import sys
-from telos_core_v1.2 import TelosCore
+from telos_core_v1_2 import TelosCore
 
 async def async_input(prompt=" "):
     loop = asyncio.get_event_loop()
