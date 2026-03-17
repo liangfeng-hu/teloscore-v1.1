@@ -2,7 +2,7 @@ import time
 import math
 import asyncio
 from dataclasses import dataclass
-from evermemos_client_v1.2 import EverMemOSClientV12
+from evermemos_client_v1_2 import EverMemOSClientV12
 from typing import Dict, Any
 
 CLIENT = EverMemOSClientV12()
@@ -80,7 +80,7 @@ class TelosCore:
     async def _shadow_execute(self, action: str, args: Dict):
         if action=="auto_make_figs":
             try:
-                import auto_make_figs_v1.2
+                import auto_make_figs_v1_2
                 await auto_make_figs_v1.2.run(args)
                 print(f"[抢跑] {action} 跨模态渲染完毕，已落盘至 assets/")
             except Exception as e:
